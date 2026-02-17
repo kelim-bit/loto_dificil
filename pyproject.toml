@@ -1,0 +1,21 @@
+[project]
+name = "loto-dificil"
+version = "0.1.0"
+description = "Conferidor local de apostas Mega-Sena e Lotofácil com resultados oficiais da Caixa"
+authors = [
+    {name = "Your Name",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+]
+
+[project.scripts]
+loto-dificil = "loto_dificil.server:run"
+
+[tool.poetry]
+packages = [{include = "loto_dificil", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

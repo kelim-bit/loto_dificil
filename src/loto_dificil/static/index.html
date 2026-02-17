@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loto Difícil</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero glass">
+        <p class="kicker">Loto Difícil</p>
+        <h1>Conferência inteligente de Mega-Sena e Lotofácil</h1>
+        <p class="subtitle">
+          Monte jogos por clique, importe por CSV, gere sugestões estatísticas e confira tudo com resultado oficial da Caixa.
+        </p>
+      </section>
+
+      <section class="panel glass" id="main-panel">
+        <div class="row row-3">
+          <label>
+            Modalidade
+            <select id="game-type" required>
+              <option value="megasena">Mega-Sena</option>
+              <option value="lotofacil">Lotofácil</option>
+            </select>
+          </label>
+          <label>
+            Concurso (opcional)
+            <input id="contest" type="number" min="1" placeholder="vazio = mais recente" />
+          </label>
+          <label>
+            Números no jogo
+            <select id="numbers-per-play"></select>
+          </label>
+        </div>
+
+        <section class="picker">
+          <div class="picker-head">
+            <strong id="picker-label">Selecione os números</strong>
+            <span id="selection-count">0 selecionados</span>
+          </div>
+          <div id="number-grid" class="number-grid"></div>
+          <div class="row actions">
+            <button type="button" id="clear-selection" class="btn btn-muted">Limpar seleção</button>
+            <button type="button" id="add-play" class="btn">Adicionar jogo</button>
+          </div>
+        </section>
+
+        <section class="saved-plays">
+          <div class="picker-head">
+            <strong>Jogos adicionados</strong>
+            <span id="plays-count">0 jogos</span>
+          </div>
+          <div id="plays-list" class="plays-list"></div>
+          <div class="row actions">
+            <button type="button" id="clear-plays" class="btn btn-muted">Limpar lista</button>
+          </div>
+        </section>
+
+        <section class="csv-block">
+          <h2>Importação CSV</h2>
+          <p class="hint">Cada linha do CSV representa um jogo. Colunas: n1, n2, n3 ...</p>
+          <div class="row actions">
+            <button type="button" id="download-template" class="btn btn-muted">Baixar modelo CSV</button>
+            <input id="csv-file" type="file" accept=".csv,text/csv" />
+            <button type="button" id="import-csv" class="btn">Importar CSV</button>
+          </div>
+        </section>
+
+        <section class="row actions">
+          <button type="button" id="suggest-games" class="btn btn-muted">Sugerir jogos</button>
+          <button type="button" id="check-all" class="btn">Conferir todos os jogos</button>
+          <button type="button" id="export-results" class="btn btn-muted" disabled>Exportar resultados</button>
+        </section>
+
+        <section id="suggestions" class="glass hidden" aria-live="polite"></section>
+        <section id="output" class="glass hidden" aria-live="polite"></section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
