@@ -49,6 +49,10 @@ function formatNumbers(numbers) {
   return numbers.map((n) => String(n).padStart(2, '0')).join(' ');
 }
 
+function formatFixed(value) {
+  return Number(value || 0).toFixed(2);
+}
+
 function comb(n, k) {
   if (k < 0 || k > n) return 0;
   if (k === 0 || k === n) return 1;
@@ -230,24 +234,27 @@ function downloadCsv(filename, content) {
 }
 
 function downloadTemplateCsv() {
-  const rule = getRule();
-  const headers = [];
-  for (let i = 1; i <= rule.max_pick; i += 1) {
-    headers.push(`n${i}`);
+  if (plays.length === 0) {
+    renderError(output, 'Adicione pelo menos 1 jogo para baixar seus jogos em CSV.');
+    return;
   }
 
-  const sample1 = Array(rule.max_pick).fill('');
-  for (let i = 0; i < rule.min_pick; i += 1) {
-    sample1[i] = String(i + 1).padStart(2, '0');
+  const maxColumns = Math.max(...plays.map((play) => play.length));
+  const headers = ['Jogo'];
+  for (let i = 1; i <= maxColumns; i += 1) {
+    headers.push(`N°${i}`);
   }
 
-  const sample2 = Array(rule.max_pick).fill('');
-  for (let i = 0; i < rule.min_pick; i += 1) {
-    sample2[i] = String(i + 6).padStart(2, '0');
-  }
+  const rows = plays.map((play, idx) => {
+    const cols = [idx + 1];
+    for (let col = 0; col < maxColumns; col += 1) {
+      cols.push(play[col] ?? '');
+    }
+    return cols.join(';');
+  });
 
-  const content = [headers.join(','), sample1.join(','), sample2.join(',')].join('\n');
-  downloadCsv(`modelo_${getGameType()}.csv`, content);
+  const content = [headers.join(';'), ...rows].join('\n');
+  downloadCsv(`jogos_${getGameType()}.csv`, content);
 }
 
 function renderSuggestions(data) {
@@ -372,18 +379,30 @@ function exportResults() {
     return;
   }
 
-  const headers = ['jogo', 'numeros', 'acertos', 'valor_jogado', 'valor_ganho', 'acertados', 'errados'];
-  const rows = latestResult.summary.plays.map((play) => [
-    play.index,
-    `"${formatNumbers(play.numbers)}"`,
-    play.hits,
-    play.spent.toFixed(2),
-    play.prize.toFixed(2),
-    `"${formatNumbers(play.hit_numbers)}"`,
-    `"${formatNumbers(play.miss_numbers)}"`,
-  ]);
+  const totalBalance = latestResult.summary.total_won - latestResult.summary.total_spent;
+  const contestTitle = latestResult.game_type === 'megasena' ? 'Mega Sena' : 'Lotofácil';
 
-  const content = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+  const rows = [
+    ['', '', contestTitle, `Concurso ${latestResult.contest}`, '', '', '', ''],
+    ['', '', '', '', '', '', '', ''],
+    ['Jogo', 'Números', 'Acertos', 'Valor jogado', 'Lucro/Perda', 'Números acertados', 'Sequência premiada', 'Saldo final'],
+  ];
+
+  latestResult.summary.plays.forEach((play, idx) => {
+    const balance = play.prize - play.spent;
+    rows.push([
+      play.index,
+      formatNumbers(play.numbers),
+      play.hits,
+      formatFixed(play.spent),
+      formatFixed(balance),
+      formatNumbers(play.hit_numbers),
+      idx === 0 ? formatNumbers(latestResult.official_numbers) : '',
+      idx === 0 ? formatFixed(totalBalance) : '',
+    ]);
+  });
+
+  const content = rows.map((row) => row.join(';')).join('\n');
   downloadCsv(`resultado_${latestResult.game_type}_concurso_${latestResult.contest}.csv`, content);
 }
 
