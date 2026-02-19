@@ -67,6 +67,10 @@ function formatNumbers(numbers) {
   return numbers.map((n) => String(n).padStart(2, '0')).join(' ');
 }
 
+function formatFixed(value) {
+  return Number(value || 0).toFixed(2);
+}
+
 function csvEscape(value) {
   const text = String(value ?? '');
   if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
@@ -261,24 +265,23 @@ function downloadCsv(filename, content) {
 
 function downloadTemplateCsv() {
   if (plays.length === 0) {
-    renderError(output, 'Adicione pelo menos 1 jogo para gerar o CSV de importação.');
+    renderError(output, 'Adicione pelo menos 1 jogo para baixar seus jogos em CSV.');
     return;
   }
 
   const maxColumns = Math.max(...plays.map((play) => play.length));
-  const headers = ['jogo'];
-  for (let i = 1; i <= maxColumns; i += 1) headers.push(`n${i}`);
+  const headers = ['Jogo'];
+  for (let i = 1; i <= maxColumns; i += 1) headers.push(`N°${i}`);
 
   const rows = plays.map((play, idx) => {
     const cols = [idx + 1];
     for (let col = 0; col < maxColumns; col += 1) {
-      const number = play[col];
-      cols.push(number ? String(number).padStart(2, '0') : '');
+      cols.push(play[col] ?? '');
     }
-    return cols.map((value) => csvEscape(value)).join(',');
+    return cols.join(';');
   });
 
-  const content = [headers.map((value) => csvEscape(value)).join(','), ...rows].join('\n');
+  const content = [headers.join(';'), ...rows].join('\n');
   downloadCsv(`jogos_${getGameType()}.csv`, content);
   output.classList.add('hidden');
 }
@@ -587,37 +590,30 @@ function exportResults() {
     return;
   }
 
-  const maxColumns = Math.max(...latestResult.summary.plays.map((play) => play.numbers.length));
-  const headers = ['jogo'];
-  for (let i = 1; i <= maxColumns; i += 1) headers.push(`n${i}`);
-  headers.push('acertos', 'valor_jogado', 'valor_ganho', 'resultado');
+  const totalBalance = latestResult.summary.total_won - latestResult.summary.total_spent;
+  const contestTitle = latestResult.game_type === 'megasena' ? 'Mega Sena' : 'Lotofácil';
 
-  const rows = latestResult.summary.plays.map((play) => {
-    const cols = [play.index];
-    for (let col = 0; col < maxColumns; col += 1) {
-      const number = play.numbers[col];
-      cols.push(number ? String(number).padStart(2, '0') : '');
-    }
+  const rows = [
+    ['', '', contestTitle, `Concurso ${latestResult.contest}`, '', '', '', ''],
+    ['', '', '', '', '', '', '', ''],
+    ['Jogo', 'Números', 'Acertos', 'Valor jogado', 'Lucro/Perda', 'Números acertados', 'Sequência premiada', 'Saldo final'],
+  ];
 
-    const saldo = play.prize - play.spent;
-    const resultado = saldo > 0 ? `lucro ${toCurrency(saldo)}` : saldo < 0 ? `prejuízo ${toCurrency(Math.abs(saldo))}` : 'empate';
-
-    cols.push(play.hits, play.spent.toFixed(2), play.prize.toFixed(2), resultado);
-    return cols.map((value) => csvEscape(value)).join(',');
+  latestResult.summary.plays.forEach((play, idx) => {
+    const balance = play.prize - play.spent;
+    rows.push([
+      play.index,
+      formatNumbers(play.numbers),
+      play.hits,
+      formatFixed(play.spent),
+      formatFixed(balance),
+      formatNumbers(play.hit_numbers),
+      idx === 0 ? formatNumbers(latestResult.official_numbers) : '',
+      idx === 0 ? formatFixed(totalBalance) : '',
+    ]);
   });
 
-  const totals = [
-    'TOTAL',
-    ...Array(maxColumns).fill(''),
-    '',
-    latestResult.summary.total_spent.toFixed(2),
-    latestResult.summary.total_won.toFixed(2),
-    latestResult.summary.net >= 0
-      ? `lucro total ${toCurrency(latestResult.summary.net)}`
-      : `prejuízo total ${toCurrency(Math.abs(latestResult.summary.net))}`,
-  ].map((value) => csvEscape(value)).join(',');
-
-  const content = [headers.map((value) => csvEscape(value)).join(','), ...rows, totals].join('\n');
+  const content = rows.map((row) => row.join(';')).join('\n');
   downloadCsv(`resultado_${latestResult.game_type}_concurso_${latestResult.contest}.csv`, content);
 }
 
